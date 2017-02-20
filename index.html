@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+    <body onload="onLoad();">
+    <canvas id="cv-voronoi"
+        width="500" 
+        height="500"
+        background-color="#FF00FF"
+        style="border:1px solid #000000;"
+        >
+    </canvas>
+
+    <script type="text/javascript">
+        var canvas;
+        var context;
+        var points = [];
+
+        function onLoad() {
+            canvas = document.getElementById("cv-voronoi");
+            context = canvas.getContext('2d');
+            canvas.addEventListener('click', onClick);
+            console.log('Loaded');
+        }
+
+        function onClick(event) {
+            var position = getPosition(canvas, event);
+            position.color = randomColor();
+            points.push(position);
+            redraw();
+            console.log("x: " + position.x + " y: " + position.y + " cnt: " + points.length);
+        }
+
+        function redraw() {
+            var image = context.getImageData(0, 0, canvas.width, canvas.height);
+            var data = image.data;
+
+            for(var x = 0; x < canvas.width; x++) {
+                for(var y = 0; y < canvas.height; y++) {
+                    var closestPoint = getClosestPoint({x: x, y: y});
+                    var index = (y * canvas.width + x) * 4;
+
+                    data[index] = closestPoint.color.red;
+                    data[index + 1] = closestPoint.color.green;
+                    data[index + 2] = closestPoint.color.blue;
+                    data[index + 3] = 255;
+                }
+            }
+
+            context.putImageData(image, 0, 0);
+            drawPoints();
+        }
+
+        function drawPoints() {
+            for(var i in points) {
+                drawPoint(points[i]);
+            }
+        }
+
+        function getClosestPoint(pixel) {
+            var closestPoint = points[0];
+            var closestDistance = distance(closestPoint, pixel);
+            for(i in points) {
+                var dist = distance(points[i], pixel);
+                    if(dist < closestDistance) {
+                        closestDistance = dist;
+                        closestPoint = points[i];
+                    }
+            }
+
+            return closestPoint;
+        }
+
+        function distance(pointA, pointB) {
+            var x = Math.pow(pointA.x - pointB.x, 2);
+            var y = Math.pow(pointA.y - pointB.y, 2);
+
+            return Math.sqrt(x + y);
+        }
+
+        function getPosition(canvas, event) {
+            var rect = canvas.getBoundingClientRect();
+            return {
+                x: event.clientX - rect.left,
+                y: event.clientY - rect.top
+            }
+        }
+
+        function drawPoint(point) {
+            context.beginPath();
+            context.arc(point.x, point.y, 2, 0, 2 * Math.PI);
+            context.stroke();
+        }
+
+        function randomColor() {
+            return {
+                red: (Math.random() * 255) | 0,
+                green: (Math.random() * 255) | 0,
+                blue: (Math.random() * 255) | 0
+            };
+        }
+
+    </script>
+    </body>
+</html>
